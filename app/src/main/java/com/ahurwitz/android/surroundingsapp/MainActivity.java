@@ -5,11 +5,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.ahurwitz.android.surroundingsapp.model.Model;
+import com.ahurwitz.android.surroundingsapp.model.Event;
 import com.ahurwitz.android.surroundingsapp.service.Service.API;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.TreeMap;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -21,10 +24,10 @@ public class MainActivity extends AppCompatActivity {
     private final String LOG_TAG = MainActivity.class.getSimpleName();
 
     private static final String API_BASE_URL = "https://data.sfgov.org/resource/cuks-n6tp.json/";
-    private Call<List<Model.Event>> call;
-    //private Call<Model> call;
-    private List<Model.Event> model;
-    private ArrayList<Model.Event> events;
+    private Call<List<Event>> call;
+    //private Call<Event> call;
+    private List<Event> model;
+    private ArrayList<Event> events;
     /*private final String startDate = "2016-02-20";
     private final String endDate = "2016-03-20";*/
 
@@ -43,21 +46,37 @@ public class MainActivity extends AppCompatActivity {
         //call = EventService.getParams("");
         //call = EventService.getParams(startDate, endDate);
 
-        call.enqueue(new Callback<List<Model.Event>>() {
+        call.enqueue(new Callback<List<Event>>() {
             @Override
-            public void onResponse(Response<List<Model.Event>> response) {
+            public void onResponse(Response<List<Event>> response) {
                 try {
                     model = response.body();
-                    model.get(0).getIncidntnum();
-                    /*events = model.get(0).getEvents();
-                    events.get(0).getIncidntnum();*/
 
-                    Log.v(LOG_TAG, "Resp Working |" +
-                            " Incident Number: "  + model.get(0).getIncidntnum()
-                            + " Index 1: " + model.get(1)
-                            + " Model Size: " + model.size());
+                    // initialize HashMap to store counts of district events
+                    HashMap<String,Integer> districts = new HashMap<String, Integer>();
+                    for (Event e : model) {
+                        Integer count = districts.get(e.getPddistrict());
+                        if (count == null){
+                            districts.put(e.getPddistrict(), 1);
+                        }
+                        else {
+                            districts.put(e.getPddistrict(),count+1);
+                        }
+                    }
 
-                    /*Log.v(LOG_TAG, "Events: " + events.size());*/
+                    for(HashMap.Entry<String, Integer> entry : districts.entrySet()){
+                        Log.v(LOG_TAG, "Districts: K| " + entry.getKey() + " V|" + entry.getValue());
+                    }
+
+                    // use comparator to convert HashMap into TreeMap with sorted Values
+                    TreeMap<String, Integer> sortedDistricts = sortMapByValue(districts);
+                    System.out.println(sortedDistricts);
+
+                    for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet()){
+                        Log.v(LOG_TAG, "Sorted Districts: K| " + entry.getKey() + " V|" + entry.getValue());
+                    }
+
+
                 } catch (NullPointerException e) {
                     Toast toast = null;
                     if (response.code() == 401) {
@@ -84,5 +103,32 @@ public class MainActivity extends AppCompatActivity {
         call.cancel();
     }
 
+    public static TreeMap<String, Integer> sortMapByValue(HashMap<String, Integer> districts){
+        Comparator<String> comparator = new ValueComparator(districts);
+        //TreeMap is a map sorted by its keys.
+        //The comparator is used to sort the TreeMap by keys.
+        TreeMap<String, Integer> result = new TreeMap<String, Integer>(comparator);
+        result.putAll(districts);
+        return result;
+    }
+}
+
+// a comparator that compares Strings
+class ValueComparator implements Comparator<String>{
+
+    HashMap<String, Integer> map = new HashMap<String, Integer>();
+
+    public ValueComparator(HashMap<String, Integer> map){
+        this.map.putAll(map);
+    }
+
+    @Override
+    public int compare(String s1, String s2) {
+        if(map.get(s1) <= map.get(s2)){
+            return -1;
+        }else{
+            return 1;
+        }
+    }
 }
 

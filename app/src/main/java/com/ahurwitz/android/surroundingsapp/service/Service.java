@@ -1,6 +1,6 @@
 package com.ahurwitz.android.surroundingsapp.service;
 
-import com.ahurwitz.android.surroundingsapp.model.Model;
+import com.ahurwitz.android.surroundingsapp.model.Event;
 
 import java.util.List;
 
@@ -15,6 +15,6 @@ public class Service {
         // build path
         @GET("?$where=date%20between%20%272016-02-20T00:00:00%27%20and%20%272016-03-20T00:00:00%27")
         // 2016-02-20
-        Call<List<Model.Event>> getAllEvents();
+        Call<List<Event>> getAllEvents();
     }
 }
