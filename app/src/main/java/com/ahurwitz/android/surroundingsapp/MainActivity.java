@@ -10,7 +10,6 @@ import com.ahurwitz.android.surroundingsapp.service.Service.API;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -53,8 +52,9 @@ public class MainActivity extends AppCompatActivity {
                     model = response.body();
 
                     // initialize HashMap to store counts of district events
-                    HashMap<String,Integer> districts = new HashMap<String, Integer>();
+                    TreeMap<String,Integer> districts = new TreeMap<String, Integer>();
                     for (Event e : model) {
+                        // null doesn't crash the app
                         Integer count = districts.get(e.getPddistrict());
                         if (count == null){
                             districts.put(e.getPddistrict(), 1);
@@ -64,13 +64,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
 
-                    for(HashMap.Entry<String, Integer> entry : districts.entrySet()){
-                        Log.v(LOG_TAG, "Districts: K| " + entry.getKey() + " V|" + entry.getValue());
-                    }
-
-                    // use comparator to convert HashMap into TreeMap with sorted Values
                     TreeMap<String, Integer> sortedDistricts = sortMapByValue(districts);
-                    System.out.println(sortedDistricts);
 
                     for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet()){
                         Log.v(LOG_TAG, "Sorted Districts: K| " + entry.getKey() + " V|" + entry.getValue());
@@ -103,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
         call.cancel();
     }
 
-    public static TreeMap<String, Integer> sortMapByValue(HashMap<String, Integer> districts){
+    public static TreeMap<String, Integer> sortMapByValue(TreeMap<String, Integer> districts){
         Comparator<String> comparator = new ValueComparator(districts);
         //TreeMap is a map sorted by its keys.
         //The comparator is used to sort the TreeMap by keys.
@@ -116,9 +110,9 @@ public class MainActivity extends AppCompatActivity {
 // a comparator that compares Strings
 class ValueComparator implements Comparator<String>{
 
-    HashMap<String, Integer> map = new HashMap<String, Integer>();
+    TreeMap<String, Integer> map = new TreeMap<String, Integer>();
 
-    public ValueComparator(HashMap<String, Integer> map){
+    public ValueComparator(TreeMap<String, Integer> map){
         this.map.putAll(map);
     }
 
@@ -126,7 +120,7 @@ class ValueComparator implements Comparator<String>{
     public int compare(String s1, String s2) {
         if(map.get(s1) <= map.get(s2)){
             return -1;
-        }else{
+        } else{
             return 1;
         }
     }
