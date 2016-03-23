@@ -66,15 +66,27 @@ public class MainActivity extends AppCompatActivity {
 
                     TreeMap<String, Integer> sortedDistricts = sortMapByValue(districts);
 
+
                     for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet()){
-                        Log.v(LOG_TAG, "Sorted Districts: K| " + entry.getKey() + " V|" + entry.getValue());
+                        Log.v(LOG_TAG, "Sorted Districts: K| " + entry.getKey() + " V|"
+                                + entry.getValue());
                     }
+
+                    //TODO: Create HashMap of District coordinates, parse through coordinate array
+                    // programmatically to build markers for Districts
+                    //
+                    // for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet(){
+                    //    districtNames.get("entry.getKey()").get(0) // point 1
+                    //    districtNames.get("entry.getKey()").get(1) // point 2
+                    //    run method to create marker
+                    // }
 
 
                 } catch (NullPointerException e) {
                     Toast toast = null;
                     if (response.code() == 401) {
-                        toast = Toast.makeText(MainActivity.this, "Unauthenticated", Toast.LENGTH_SHORT);
+                        toast = Toast.makeText(MainActivity.this, "Unauthenticated",
+                                Toast.LENGTH_SHORT);
                     } else if (response.code() >= 400) {
                         toast = Toast.makeText(MainActivity.this, "Client Error " + response.code()
                                 + " " + response.message(), Toast.LENGTH_SHORT);
