@@ -21,9 +21,9 @@ public class MainActivity extends AppCompatActivity {
     private final String LOG_TAG = MainActivity.class.getSimpleName();
 
     private static final String API_BASE_URL = "https://data.sfgov.org/resource/cuks-n6tp.json/";
-    private Call<List<Model>> call;
+    private Call<List<Model.Event>> call;
     //private Call<Model> call;
-    private List<Model> model;
+    private List<Model.Event> model;
     private ArrayList<Model.Event> events;
     /*private final String startDate = "2016-02-20";
     private final String endDate = "2016-03-20";*/
@@ -43,15 +43,20 @@ public class MainActivity extends AppCompatActivity {
         //call = EventService.getParams("");
         //call = EventService.getParams(startDate, endDate);
 
-        call.enqueue(new Callback<List<Model>>() {
+        call.enqueue(new Callback<List<Model.Event>>() {
             @Override
-            public void onResponse(Response<List<Model>> response) {
+            public void onResponse(Response<List<Model.Event>> response) {
                 try {
                     model = response.body();
+                    model.get(0).getIncidntnum();
                     /*events = model.get(0).getEvents();
                     events.get(0).getIncidntnum();*/
 
-                    Log.v(LOG_TAG, "Response Working | " + "Model Size: " + model.size());
+                    Log.v(LOG_TAG, "Resp Working |" +
+                            " Incident Number: "  + model.get(0).getIncidntnum()
+                            + " Index 1: " + model.get(1)
+                            + " Model Size: " + model.size());
+
                     /*Log.v(LOG_TAG, "Events: " + events.size());*/
                 } catch (NullPointerException e) {
                     Toast toast = null;

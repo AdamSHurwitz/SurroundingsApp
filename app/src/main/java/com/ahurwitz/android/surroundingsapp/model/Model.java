@@ -12,9 +12,9 @@ public class Model {
     /**
      * @return Event ArrayList of events
      */
-    public ArrayList<Event> getEvents() {
+    /*public ArrayList<Event> getEvents() {
         return events;
-    }
+    }*/
 
     /**
      * @param events passes in events returned from call to EventService
