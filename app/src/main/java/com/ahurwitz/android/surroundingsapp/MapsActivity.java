@@ -11,7 +11,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
@@ -38,8 +40,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Call<List<Event>> call;
     private List<Event> model;
     SupportMapFragment mapFragment;
-    String[] markerColors = {"#E9BFC3", "#DEA1A7", "#D3838B", "#C8656F", "#BD4753", "#B22937",
-            "#961E2A"};
+    float[] markerColors = {BitmapDescriptorFactory.HUE_YELLOW, BitmapDescriptorFactory.HUE_ORANGE,
+            BitmapDescriptorFactory.HUE_RED};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -155,7 +157,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 destCords.put(dest, latLng);
             }
 
-            for (TreeMap.Entry<String, LatLng> entry : destCords.entrySet()){
+            for (TreeMap.Entry<String, LatLng> entry : destCords.entrySet()) {
                 Log.v(LOG_TAG, "Destination Cords | Districts: " + entry.getKey() + " Val: "
                         + entry.getValue());
             }
@@ -167,51 +169,59 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // loop through sorted distracts and place markers according to volume of incidents
         int n = 0;
+        float color = BitmapDescriptorFactory.HUE_BLUE;
+        LatLngBounds.Builder sFbuilder = new LatLngBounds.Builder();
+
         for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet()) {
             /*Log.v(LOG_TAG, "Sorted Districts: K| " + entry.getKey() + " V|"
                     + entry.getValue());*/
+            int disLength = sortedDistricts.size();
+            int firstThird = disLength / 3;
+            int secondThird = (disLength * 2)/3;
+
             String destName = entry.getKey();
-            LatLng latLng  = destCords.get(destName);
-            //LatLng marker = new LatLng(-34, 151);
-            mMap.addMarker(new MarkerOptions().position(latLng).title(""));
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+            LatLng latLng = destCords.get(destName);
+            // Create a LatLngBounds that includes Australia.
+            sFbuilder.include(latLng);
+
+            // Set the camera to the greatest possible zoom level that includes the
+            // bounds
+            //String color = markerColors[n];
+
+            if(n<=firstThird){color = markerColors[0];}
+            else if (n > firstThird && n <= secondThird ){color = markerColors[1];}
+            else {color = markerColors[2];}
+
+            mMap.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title(destName)
+                    .icon(BitmapDescriptorFactory.defaultMarker(color)));
             n++;
         }
-            /*LatLng marker = new LatLng(-34, 151);
-            mMap.addMarker(new MarkerOptions().position(marker).title("Marker in Sydney"));
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(marker));*/
+
+        LatLngBounds bounds = sFbuilder.build();
+        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
     }
 
-    //TODO: Create HashMap of District coordinates, parse through coordinate array
-    // programmatically to build markers for Districts
-    //
-    // for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet(){
-    //    districtNames.get("entry.getKey()").get(0) // point 1
-    //    districtNames.get("entry.getKey()").get(1) // point 2
-    //    run method to create marker
-    // }
 
+    // a comparator that compares Strings
+    static class ValueComparator implements Comparator<String> {
 
+        TreeMap<String, Integer> map = new TreeMap<>();
 
+        public ValueComparator(TreeMap<String, Integer> map) {
+            this.map.putAll(map);
+        }
 
-// a comparator that compares Strings
-static class ValueComparator implements Comparator<String> {
-
-    TreeMap<String, Integer> map = new TreeMap<String, Integer>();
-
-    public ValueComparator(TreeMap<String, Integer> map) {
-        this.map.putAll(map);
-    }
-
-    @Override
-    public int compare(String s1, String s2) {
-        if (map.get(s1) <= map.get(s2)) {
-            return -1;
-        } else {
-            return 1;
+        @Override
+        public int compare(String s1, String s2) {
+            if (map.get(s1) <= map.get(s2)) {
+                return -1;
+            } else {
+                return 1;
+            }
         }
     }
-}
 }
 
 
