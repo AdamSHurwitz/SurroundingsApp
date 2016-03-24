@@ -14,7 +14,14 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -30,6 +37,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final String API_BASE_URL = "https://data.sfgov.org/resource/cuks-n6tp.json/";
     private Call<List<Event>> call;
     private List<Event> model;
+    SupportMapFragment mapFragment;
+    String[] markerColors = {"#E9BFC3", "#DEA1A7", "#D3838B", "#C8656F", "#BD4753", "#B22937",
+            "#961E2A"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,9 +47,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_maps);
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+        mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(API_BASE_URL)
@@ -54,37 +63,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onResponse(Response<List<Event>> response) {
                 try {
                     model = response.body();
-
-                    // initialize HashMap to store counts of district events
-                    TreeMap<String, Integer> districts = new TreeMap<String, Integer>();
-                    for (Event e : model) {
-                        // null doesn't crash the app
-                        Integer count = districts.get(e.getPddistrict());
-                        if (count == null) {
-                            districts.put(e.getPddistrict(), 1);
-                        } else {
-                            districts.put(e.getPddistrict(), count + 1);
-                        }
-                    }
-
-                    TreeMap<String, Integer> sortedDistricts = sortMapByValue(districts);
-
-
-                    for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet()) {
-                        Log.v(LOG_TAG, "Sorted Districts: K| " + entry.getKey() + " V|"
-                                + entry.getValue());
-                    }
-
-                    //TODO: Create HashMap of District coordinates, parse through coordinate array
-                    // programmatically to build markers for Districts
-                    //
-                    // for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet(){
-                    //    districtNames.get("entry.getKey()").get(0) // point 1
-                    //    districtNames.get("entry.getKey()").get(1) // point 2
-                    //    run method to create marker
-                    // }
-
-
                 } catch (NullPointerException e) {
                     Toast toast = null;
                     if (response.code() == 401) {
@@ -96,6 +74,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                     toast.show();
                 }
+                mapFragment.getMapAsync(MapsActivity.this);
             }
 
             @Override
@@ -135,35 +114,106 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-
-        if (model != null) {
-            Log.v(LOG_TAG, "onMapReady: " + model.size());
+        // initialize HashMap to store counts of district events
+        TreeMap<String, Integer> districts = new TreeMap<String, Integer>();
+        for (Event e : model) {
+            // null doesn't crash the app
+            Integer count = districts.get(e.getPddistrict());
+            if (count == null) {
+                districts.put(e.getPddistrict(), 1);
+            } else {
+                districts.put(e.getPddistrict(), count + 1);
+            }
         }
+
+        // sort districts by event volume
+        TreeMap<String, Integer> sortedDistricts = sortMapByValue(districts);
+
+        // get values of destination coordinates and store in HashMap
+        HashMap<String, LatLng> destCords = new HashMap<>();
+
+        String json = null;
+        try {
+            InputStream is = getAssets().open("districts.geojson");
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+            JSONObject destCordObj = new JSONObject(json);
+            JSONArray jsonArray = destCordObj.getJSONArray("features");
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject containerObj = jsonArray.getJSONObject(i);
+                JSONObject propObj = containerObj.getJSONObject("properties");
+                String dest = propObj.getString("district");
+
+                JSONObject geoObj = containerObj.getJSONObject("geometry");
+                JSONArray coordArray = geoObj.getJSONArray("coordinates");
+                LatLng latLng = new LatLng(coordArray.getDouble(1), coordArray.getDouble(0));
+                Log.v(LOG_TAG, "dest: " + dest + " latlng: " + latLng.latitude + " "
+                        + latLng.longitude);
+                destCords.put(dest, latLng);
+            }
+
+            for (TreeMap.Entry<String, LatLng> entry : destCords.entrySet()){
+                Log.v(LOG_TAG, "Destination Cords | Districts: " + entry.getKey() + " Val: "
+                        + entry.getValue());
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        // loop through sorted distracts and place markers according to volume of incidents
+        int n = 0;
+        for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet()) {
+            /*Log.v(LOG_TAG, "Sorted Districts: K| " + entry.getKey() + " V|"
+                    + entry.getValue());*/
+            String destName = entry.getKey();
+            LatLng latLng  = destCords.get(destName);
+            //LatLng marker = new LatLng(-34, 151);
+            mMap.addMarker(new MarkerOptions().position(latLng).title(""));
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+            n++;
+        }
+            /*LatLng marker = new LatLng(-34, 151);
+            mMap.addMarker(new MarkerOptions().position(marker).title("Marker in Sydney"));
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(marker));*/
     }
 
-    // a comparator that compares Strings
-    static class ValueComparator implements Comparator<String> {
+    //TODO: Create HashMap of District coordinates, parse through coordinate array
+    // programmatically to build markers for Districts
+    //
+    // for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet(){
+    //    districtNames.get("entry.getKey()").get(0) // point 1
+    //    districtNames.get("entry.getKey()").get(1) // point 2
+    //    run method to create marker
+    // }
 
-        TreeMap<String, Integer> map = new TreeMap<String, Integer>();
 
-        public ValueComparator(TreeMap<String, Integer> map) {
-            this.map.putAll(map);
-        }
 
-        @Override
-        public int compare(String s1, String s2) {
-            if (map.get(s1) <= map.get(s2)) {
-                return -1;
-            } else {
-                return 1;
-            }
+
+// a comparator that compares Strings
+static class ValueComparator implements Comparator<String> {
+
+    TreeMap<String, Integer> map = new TreeMap<String, Integer>();
+
+    public ValueComparator(TreeMap<String, Integer> map) {
+        this.map.putAll(map);
+    }
+
+    @Override
+    public int compare(String s1, String s2) {
+        if (map.get(s1) <= map.get(s2)) {
+            return -1;
+        } else {
+            return 1;
         }
     }
 }
+}
+
 
 
 

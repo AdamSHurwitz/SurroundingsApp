@@ -1,0 +1,20 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+                                                                                
+"features": [
+{ "type": "Feature",
+  "properties": { "photo": "", "name": "Embarcadero", "district": "CENTRAL" },
+  "geometry": { "type": "Point",
+                "coordinates": [ -122.409862909291093, 37.799999999999113 ] } },
+{ "type": "Feature", "properties": { "photo": "", "name": "Soma", "district": "SOUTHERN" }, "geometry": { "type": "Point", "coordinates": [ -122.40432830154468, 37.774988899469427 ] } },
+{ "type": "Feature", "properties": { "photo": "", "name": "Bayview", "district": "BAYVIEW" }, "geometry": { "type": "Point", "coordinates": [ -122.398086554936313, 37.729641718322 ] } },
+{ "type": "Feature", "properties": { "photo": "", "name": "Mission", "district": "MISSION" }, "geometry": { "type": "Point", "coordinates": [ -122.421969665401335, 37.762680702642363 ] } },
+{ "type": "Feature", "properties": { "photo": "", "name": "Nob Hill",  "district": "NORTHERN" }, "geometry": { "type": "Point", "coordinates": [ -122.432390435178931, 37.780161140378134 ] } },
+{ "type": "Feature", "properties": { "photo": "", "name": "Golden Gate Park", "district": "PARK"  }, "geometry": { "type": "Point", "coordinates": [ -122.475266597187119, 37.767848624283403 ] } },
+{ "type": "Feature", "properties": { "photo": "", "name": "Richmond", "district": "RICHMOND"  }, "geometry": { "type": "Point", "coordinates": [ -122.464460728646259, 37.780001292570731 ] } },
+{ "type": "Feature", "properties": { "photo": "", "name": "Glen Park", "district": "INGLESIDE"  }, "geometry": { "type": "Point", "coordinates": [ -122.446251045020546, 37.724770134356135 ] } },
+{ "type": "Feature", "properties": { "photo": "", "name": "Ocean Beach", "district": "TARAVAL"  }, "geometry": { "type": "Point", "coordinates": [ -122.5074808671522, 37.743733794624994 ] } },
+{ "type": "Feature", "properties": { "photo": "", "name": "Tenderloin", "district": "TENDERLOIN" }, "geometry": { "type": "Point", "coordinates": [ -122.412895752224273, 37.783704058130724 ] } }
+]
+}
