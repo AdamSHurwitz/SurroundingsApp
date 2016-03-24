@@ -14,7 +14,6 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeMap;
@@ -30,11 +29,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     private static final String API_BASE_URL = "https://data.sfgov.org/resource/cuks-n6tp.json/";
     private Call<List<Event>> call;
-    //private Call<Event> call;
     private List<Event> model;
-    private ArrayList<Event> events;
-    /*private final String startDate = "2016-02-20";
-    private final String endDate = "2016-03-20";*/
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +48,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Service.API API = retrofit.create(Service.API.class);
         call = API.getAllEvents();
-        //call = EventService.getParams("");
-        //call = EventService.getParams(startDate, endDate);
 
         call.enqueue(new Callback<List<Event>>() {
             @Override
@@ -119,7 +112,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         call.cancel();
     }
 
-    public static TreeMap<String, Integer> sortMapByValue(TreeMap<String, Integer> districts){
+    public static TreeMap<String, Integer> sortMapByValue(TreeMap<String, Integer> districts) {
         Comparator<String> comparator = new ValueComparator(districts);
         //TreeMap is a map sorted by its keys.
         //The comparator is used to sort the TreeMap by keys.
@@ -146,26 +139,32 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-    }
-}
 
-
-
-// a comparator that compares Strings
-class ValueComparator implements Comparator<String>{
-
-    TreeMap<String, Integer> map = new TreeMap<String, Integer>();
-
-    public ValueComparator(TreeMap<String, Integer> map){
-        this.map.putAll(map);
+        if (model != null) {
+            Log.v(LOG_TAG, "onMapReady: " + model.size());
+        }
     }
 
-    @Override
-    public int compare(String s1, String s2) {
-        if(map.get(s1) <= map.get(s2)){
-            return -1;
-        } else{
-            return 1;
+    // a comparator that compares Strings
+    static class ValueComparator implements Comparator<String> {
+
+        TreeMap<String, Integer> map = new TreeMap<String, Integer>();
+
+        public ValueComparator(TreeMap<String, Integer> map) {
+            this.map.putAll(map);
+        }
+
+        @Override
+        public int compare(String s1, String s2) {
+            if (map.get(s1) <= map.get(s2)) {
+                return -1;
+            } else {
+                return 1;
+            }
         }
     }
 }
+
+
+
+

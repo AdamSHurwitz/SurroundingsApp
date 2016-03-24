@@ -13,8 +13,7 @@ import retrofit2.http.GET;
 public class Service {
     public interface API {
         // build path
-        @GET("?$where=date%20between%20%272016-02-20T00:00:00%27%20and%20%272016-03-20T00:00:00%27")
-        // 2016-02-20
+        @GET("?$where=date%20between%20%272015-12-1T00:00:00%27%20and%20%272015-12-31T00:00:00%27")
         Call<List<Event>> getAllEvents();
     }
 }
