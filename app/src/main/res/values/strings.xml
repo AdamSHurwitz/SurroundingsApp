@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">SurroundingsApp</string>
-    <string name="title_activity_maps">SurroundingsApp</string>
+    <string name="title_activity_maps">Crime Incidents By District - SF</string>
     <string name="google_app_id">1</string>
 </resources>

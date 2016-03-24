@@ -3,7 +3,6 @@ package com.ahurwitz.android.surroundingsapp;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.ahurwitz.android.surroundingsapp.model.Event;
 import com.ahurwitz.android.surroundingsapp.service.Service;
@@ -40,6 +39,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Call<List<Event>> call;
     private List<Event> model;
     SupportMapFragment mapFragment;
+
+    // array of marker colors for google map
     float[] markerColors = {BitmapDescriptorFactory.HUE_YELLOW, BitmapDescriptorFactory.HUE_ORANGE,
             BitmapDescriptorFactory.HUE_RED};
 
@@ -48,33 +49,36 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        // obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
 
+        // create retrofit builder with base url
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(API_BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
+        // create api call adding url path
         Service.API API = retrofit.create(Service.API.class);
         call = API.getAllEvents();
 
+        // make api call
         call.enqueue(new Callback<List<Event>>() {
             @Override
             public void onResponse(Response<List<Event>> response) {
                 try {
+                    // save list of events to instance variable to use in google maps onMapReady()
+                    // method
                     model = response.body();
                 } catch (NullPointerException e) {
-                    Toast toast = null;
                     if (response.code() == 401) {
-                        toast = Toast.makeText(MapsActivity.this, "Unauthenticated",
-                                Toast.LENGTH_SHORT);
+                        Log.v(LOG_TAG, "Unauthenticated");
                     } else if (response.code() >= 400) {
-                        toast = Toast.makeText(MapsActivity.this, "Client Error " + response.code()
-                                + " " + response.message(), Toast.LENGTH_SHORT);
+                        Log.v(LOG_TAG, "Client Error " + response.code() + " "
+                                + response.message());
                     }
-                    toast.show();
+                    ;
                 }
                 mapFragment.getMapAsync(MapsActivity.this);
             }
@@ -86,6 +90,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
+    // stop call to API server
     @Override
     protected void onStop() {
         super.onStop();
@@ -93,24 +98,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         call.cancel();
     }
 
-    public static TreeMap<String, Integer> sortMapByValue(TreeMap<String, Integer> districts) {
-        Comparator<String> comparator = new ValueComparator(districts);
-        //TreeMap is a map sorted by its keys.
-        //The comparator is used to sort the TreeMap by keys.
-        TreeMap<String, Integer> result = new TreeMap<String, Integer>(comparator);
-        result.putAll(districts);
-        return result;
-    }
-
-
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
+     * This is where we can add markers or lines, add listeners or move the camera.
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -130,6 +121,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // sort districts by event volume
         TreeMap<String, Integer> sortedDistricts = sortMapByValue(districts);
+
+
+        // parse through JSON file to get district destination coordinates
 
         // get values of destination coordinates and store in HashMap
         HashMap<String, LatLng> destCords = new HashMap<>();
@@ -152,45 +146,37 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 JSONObject geoObj = containerObj.getJSONObject("geometry");
                 JSONArray coordArray = geoObj.getJSONArray("coordinates");
                 LatLng latLng = new LatLng(coordArray.getDouble(1), coordArray.getDouble(0));
-                Log.v(LOG_TAG, "dest: " + dest + " latlng: " + latLng.latitude + " "
-                        + latLng.longitude);
                 destCords.put(dest, latLng);
             }
 
-            for (TreeMap.Entry<String, LatLng> entry : destCords.entrySet()) {
-                Log.v(LOG_TAG, "Destination Cords | Districts: " + entry.getKey() + " Val: "
-                        + entry.getValue());
-            }
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        // loop through sorted distracts and place markers according to volume of incidents
+        // loop through sorted districts and place markers according to volume of incidents
         int n = 0;
         float color = BitmapDescriptorFactory.HUE_BLUE;
         LatLngBounds.Builder sFbuilder = new LatLngBounds.Builder();
 
         for (TreeMap.Entry<String, Integer> entry : sortedDistricts.entrySet()) {
-            /*Log.v(LOG_TAG, "Sorted Districts: K| " + entry.getKey() + " V|"
-                    + entry.getValue());*/
             int disLength = sortedDistricts.size();
             int firstThird = disLength / 3;
-            int secondThird = (disLength * 2)/3;
+            int secondThird = (disLength * 2) / 3;
 
             String destName = entry.getKey();
             LatLng latLng = destCords.get(destName);
-            // Create a LatLngBounds that includes Australia.
             sFbuilder.include(latLng);
 
-            // Set the camera to the greatest possible zoom level that includes the
-            // bounds
-            //String color = markerColors[n];
 
-            if(n<=firstThird){color = markerColors[0];}
-            else if (n > firstThird && n <= secondThird ){color = markerColors[1];}
-            else {color = markerColors[2];}
+            if (n <= firstThird) {
+                color = markerColors[0];
+            } else if (n > firstThird && n <= secondThird) {
+                color = markerColors[1];
+            } else {
+                color = markerColors[2];
+            }
 
             mMap.addMarker(new MarkerOptions()
                     .position(latLng)
@@ -221,6 +207,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 return 1;
             }
         }
+    }
+
+    /**
+     * @param districts passes in sorted districts by key
+     * @return TreeMap of sorted districts by value
+     */
+    public static TreeMap<String, Integer> sortMapByValue(TreeMap<String, Integer> districts) {
+        Comparator<String> comparator = new ValueComparator(districts);
+        //TreeMap is a map sorted by its keys.
+        //The comparator is used to sort the TreeMap by keys.
+        TreeMap<String, Integer> result = new TreeMap<String, Integer>(comparator);
+        result.putAll(districts);
+        return result;
     }
 }
 
